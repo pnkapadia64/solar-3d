@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import GUI from "lil-gui";
+import Stats from "stats.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import {
   EARTH_MOON_DISTANCE,
@@ -9,12 +10,31 @@ import {
   SUN_EARTH_DISTANCE,
 } from "./solar-bodies";
 
+// FPS stats
+const stats = new Stats();
+stats.showPanel(0);
+document.body.appendChild(stats.dom);
+
 const rotations = {
-  sun: true,
-  earth: true,
-  earthAround: true,
-  moon: true,
-  moonAround: true,
+  sun: {
+    rotate: true,
+    currentRotation: 0,
+    lastRotationTime: 0,
+  },
+  earth: {
+    rotate: true,
+    currentRotation: 0,
+    lastRotationTime: 0,
+    currentRevolution: 0,
+    lastRevolutionTime: 0,
+  },
+  moon: {
+    rotate: true,
+    currentRotation: 0,
+    lastRotationTime: 0,
+    currentRevolution: 0,
+    lastRevolutionTime: 0,
+  },
 };
 
 const canvas = document.getElementById("main");
@@ -114,31 +134,58 @@ window.addEventListener("click", function (event) {
 });
 
 // GUI
-gui.add(rotations, "sun").setValue(false).name("sun");
-gui.add(rotations, "earth").setValue(false).name("earth");
-gui.add(rotations, "moon").setValue(false).name("moon");
+gui.add(rotations.sun, "rotate").setValue(false).name("sun");
+gui.add(rotations.earth, "rotate").setValue(false).name("earth");
+gui.add(rotations.moon, "rotate").setValue(false).name("moon");
 
 const clock = new THREE.Clock();
 const tick = () => {
+  stats.begin();
   const elapsedTime = clock.getElapsedTime();
 
   // Sun
-  if (rotations.sun) {
-    sunMesh.rotation.y = elapsedTime * Math.PI * 0.05;
+  const sunDeltaTime = elapsedTime - rotations.sun.lastRotationTime;
+  rotations.sun.lastRotationTime = elapsedTime;
+  if (rotations.sun.rotate) {
+    rotations.sun.currentRotation += sunDeltaTime * Math.PI * 0.05;
+    sunMesh.rotation.y = rotations.sun.currentRotation;
   }
 
   // Earth
-  if (rotations.earth) {
-    earthMesh.rotation.y = elapsedTime * Math.PI * 0.4;
-    earthCOG.position.x = Math.cos(elapsedTime / 6) * SUN_EARTH_DISTANCE;
-    earthCOG.position.y = Math.sin(elapsedTime / 6) * SUN_EARTH_DISTANCE;
+  const earthDeltaTime = elapsedTime - rotations.earth.lastRotationTime;
+  rotations.earth.lastRotationTime = elapsedTime;
+  const earthRevDeltaTime = elapsedTime - rotations.earth.lastRevolutionTime;
+  rotations.earth.lastRevolutionTime = elapsedTime;
+
+  if (rotations.earth.rotate) {
+    rotations.earth.currentRotation += earthDeltaTime * Math.PI * 0.4;
+    earthMesh.rotation.y = rotations.earth.currentRotation;
+
+    const revolutionDelta = earthRevDeltaTime / 6;
+    rotations.earth.currentRevolution += revolutionDelta;
+
+    earthCOG.position.x =
+      Math.cos(rotations.earth.currentRevolution) * SUN_EARTH_DISTANCE;
+    earthCOG.position.y =
+      Math.sin(rotations.earth.currentRevolution) * SUN_EARTH_DISTANCE;
   }
 
   // Moon
-  if (rotations.moon) {
-    moonMesh.rotation.y = elapsedTime * Math.PI * 0.6;
-    moonMesh.position.y = Math.sin(elapsedTime / 3) * EARTH_MOON_DISTANCE;
-    moonMesh.position.x = Math.cos(elapsedTime / 3) * EARTH_MOON_DISTANCE;
+  const moonDeltaTime = elapsedTime - rotations.moon.lastRotationTime;
+  rotations.moon.lastRotationTime = elapsedTime;
+  const moonRevDeltaTime = elapsedTime - rotations.moon.lastRevolutionTime;
+  rotations.moon.lastRevolutionTime = elapsedTime;
+  if (rotations.moon.rotate) {
+    rotations.moon.currentRotation += moonDeltaTime * Math.PI * 0.6;
+    moonMesh.rotation.y = rotations.moon.currentRotation;
+
+    const revolutionDelta = moonRevDeltaTime / 3;
+    rotations.moon.currentRevolution += revolutionDelta;
+
+    moonMesh.position.y =
+      Math.sin(rotations.moon.currentRevolution) * EARTH_MOON_DISTANCE;
+    moonMesh.position.x =
+      Math.cos(rotations.moon.currentRevolution) * EARTH_MOON_DISTANCE;
   }
 
   // raycaster
@@ -148,7 +195,7 @@ const tick = () => {
   if (clicked) {
     const objectClicked = intersects[0]?.object.name;
     if (objectClicked && rotations.hasOwnProperty(objectClicked)) {
-      rotations[objectClicked] = !rotations[objectClicked];
+      rotations[objectClicked].rotate = !rotations[objectClicked].rotate;
     }
     clicked = false;
   }
@@ -156,6 +203,7 @@ const tick = () => {
   controls.update();
   renderer.render(scene, camera);
 
+  stats.end();
   window.requestAnimationFrame(tick);
 };
 
