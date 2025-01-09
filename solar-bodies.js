@@ -8,6 +8,8 @@ export const EARTH_MOON_DISTANCE = 1.5;
 
 const textureLoader = new THREE.TextureLoader();
 
+const clock = new THREE.Clock();
+
 export const getSun = () => {
   const textureSun = textureLoader.load("/assets/sun.jpg");
   textureSun.colorSpace = THREE.SRGBColorSpace;
@@ -17,9 +19,16 @@ export const getSun = () => {
   });
   sunMaterial.roughness = 0.4;
 
-  const sunGeometry = new THREE.SphereGeometry(SUN_RADIUS);
-  const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
-  sunMesh.position.set(0, 0, -4);
+  const sunMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(SUN_RADIUS),
+    sunMaterial
+  );
+  sunMesh.position.set(0, 0, 0);
+  sunMesh.name = "sun";
 
-  return sunMesh;
+  const sunCOG = new THREE.Group();
+  sunCOG.position.set(0, 0, -5);
+  sunCOG.add(sunMesh);
+
+  return { sunCOG, sunMesh };
 };

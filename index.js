@@ -39,33 +39,40 @@ const moonMaterial = new THREE.MeshLambertMaterial({
 });
 moonMaterial.metalness = 0.4;
 
-const moonGeometry = new THREE.SphereGeometry(MOON_RADIUS);
-const moonMesh = new THREE.Mesh(moonGeometry, moonMaterial);
+const moonMesh = new THREE.Mesh(
+  new THREE.SphereGeometry(MOON_RADIUS),
+  moonMaterial
+);
 moonMesh.position.set(-EARTH_MOON_DISTANCE, 0, 0);
+moonMesh.name = "moon";
 
 // Earth
 const textureEarth = textureLoader.load("/assets/earth.jpg");
 textureEarth.colorSpace = THREE.SRGBColorSpace;
-
 const earthMaterial = new THREE.MeshLambertMaterial({
   map: textureEarth,
 });
 earthMaterial.metalness = 0.4;
 
-const earthGeometry = new THREE.SphereGeometry(EARTH_RADIUS);
-const earthMesh = new THREE.Mesh(earthGeometry, earthMaterial);
-earthMesh.position.set(-SUN_EARTH_DISTANCE, 0, 0);
+const earthCOG = new THREE.Group();
+const earthMesh = new THREE.Mesh(
+  new THREE.SphereGeometry(EARTH_RADIUS),
+  earthMaterial
+);
+earthMesh.name = "earth";
 
-earthMesh.add(moonMesh);
-// scene.add(earthMesh);
+earthCOG.position.set(-SUN_EARTH_DISTANCE, 0, 0);
+earthCOG.add(earthMesh);
+
+earthCOG.add(moonMesh);
 
 // Sun
-const sunMesh = getSun();
-sunMesh.add(earthMesh);
-scene.add(sunMesh);
+const { sunMesh, sunCOG } = getSun();
+sunCOG.add(earthCOG);
+scene.add(sunCOG);
 
 // Light
-const ambientLight = new THREE.AmbientLight("#222", 30);
+const ambientLight = new THREE.AmbientLight(0x404040, 30);
 scene.add(ambientLight);
 gui.add(ambientLight, "intensity").min(15).max(50).step(1).name("ambient");
 
@@ -84,6 +91,7 @@ const camera = new THREE.PerspectiveCamera(
   dimension.width / dimension.height
 );
 camera.position.set(0, 0, 7);
+camera.lookAt(new THREE.Vector3(0, 0, -4));
 scene.add(camera);
 
 const renderer = new THREE.WebGLRenderer({
@@ -93,30 +101,56 @@ renderer.setSize(dimension.width, dimension.height);
 
 // OrbitControls
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true; // For smoother interaction
+controls.enableDamping = true;
+
+// Raycaster
+const raycaster = new THREE.Raycaster();
+const mousePos = new THREE.Vector2();
+let clicked = false;
+window.addEventListener("click", function (event) {
+  mousePos.x = (event.clientX / dimension.width) * 2 - 1;
+  mousePos.y = -(event.clientY / dimension.height) * 2 + 1;
+  clicked = true;
+});
 
 // GUI
-gui.add(rotations, "earth").name("earth");
-gui.add(rotations, "earthAround").setValue(false).name("earth around");
-gui.add(rotations, "sun").name("sun");
+gui.add(rotations, "sun").setValue(false).name("sun");
+gui.add(rotations, "earth").setValue(false).name("earth");
+gui.add(rotations, "moon").setValue(false).name("moon");
 
 const clock = new THREE.Clock();
-
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
+
+  // Sun
+  if (rotations.sun) {
+    sunMesh.rotation.y = elapsedTime * Math.PI * 0.05;
+  }
 
   // Earth
   if (rotations.earth) {
     earthMesh.rotation.y = elapsedTime * Math.PI * 0.4;
-  }
-  if (rotations.earthAround) {
-    earthMesh.position.y = Math.sin(elapsedTime / 6) * 4;
-    earthMesh.position.x = Math.cos(elapsedTime / 6) * 4;
+    earthCOG.position.x = Math.cos(elapsedTime / 6) * SUN_EARTH_DISTANCE;
+    earthCOG.position.y = Math.sin(elapsedTime / 6) * SUN_EARTH_DISTANCE;
   }
 
-  // Sun
-  if (rotations.sun) {
-    sunMesh.rotation.y = elapsedTime * Math.PI * 0.1;
+  // Moon
+  if (rotations.moon) {
+    moonMesh.rotation.y = elapsedTime * Math.PI * 0.6;
+    moonMesh.position.y = Math.sin(elapsedTime / 3) * EARTH_MOON_DISTANCE;
+    moonMesh.position.x = Math.cos(elapsedTime / 3) * EARTH_MOON_DISTANCE;
+  }
+
+  // raycaster
+  raycaster.setFromCamera(mousePos, camera);
+  const intersects = raycaster.intersectObjects([sunMesh, earthMesh, moonMesh]);
+
+  if (clicked) {
+    const objectClicked = intersects[0]?.object.name;
+    if (objectClicked && rotations.hasOwnProperty(objectClicked)) {
+      rotations[objectClicked] = !rotations[objectClicked];
+    }
+    clicked = false;
   }
 
   controls.update();
