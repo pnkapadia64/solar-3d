@@ -45,14 +45,14 @@ class SolarSystem {
 
   setupCelestialBodies() {
     // Sun
-    const sun = new CelestialBody(SUN_RADIUS, "./assets/sun.jpg");
+    const sun = new CelestialBody(SUN_RADIUS, "./static/sun.jpg");
     sun.setName("sun");
     sun.setPosition(0, 0, -5);
     sun.setRotation(SUN_ROTATION_SPEED);
     sun.setupEvents();
 
     // Earth
-    const earth = new CelestialBody(EARTH_RADIUS, "./assets/earth.jpg");
+    const earth = new CelestialBody(EARTH_RADIUS, "./static/earth.jpg");
     earth.setName("earth");
     earth.setPosition(-SUN_EARTH_DISTANCE, 0, 0);
     earth.setRotation(EARTH_ROTATION_SPEED);
@@ -60,7 +60,7 @@ class SolarSystem {
     earth.setupEvents();
 
     // Moon
-    const moon = new CelestialBody(MOON_RADIUS, "./assets/moon.jpg");
+    const moon = new CelestialBody(MOON_RADIUS, "./static/moon.jpg");
     moon.setName("moon");
     moon.setPosition(-EARTH_MOON_DISTANCE, 0, 0);
     moon.setRotation(MOON_ROTATION_SPEED);
