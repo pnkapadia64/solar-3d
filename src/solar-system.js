@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { Sky } from "three/addons/objects/Sky.js";
 import GUI from "lil-gui";
 import {
   EARTH_MOON_DISTANCE,
@@ -15,6 +16,8 @@ import { SUN_ROTATION_SPEED } from "./constants.js";
 import { MOON_ROTATION_SPEED } from "./constants.js";
 import { EARTH_ROTATION_SPEED } from "./constants.js";
 
+const textureLoader = new THREE.TextureLoader();
+
 class SolarSystem {
   constructor(canvas) {
     this.scene = new THREE.Scene();
@@ -23,6 +26,7 @@ class SolarSystem {
       this.gui = new GUI();
     }
     this.setupCelestialBodies();
+    this.setupSky();
     this.setupLight();
 
     const dimension = {
@@ -72,10 +76,23 @@ class SolarSystem {
     this.scene.add(sun.getCentre());
   }
 
+  setupSky() {
+    const texture = textureLoader.load("./images/space.webp");
+    texture.colorSpace = THREE.SRGBColorSpace;
+
+    const sky = new THREE.Mesh(
+      new THREE.SphereGeometry(20),
+      new THREE.MeshStandardMaterial({ map: texture, side: THREE.BackSide })
+    );
+    sky.position.set(2, 0, 0);
+
+    this.scene.add(sky);
+  }
+
   setupLight() {
     const hasDebugMode = this.hasDebugMode();
 
-    const ambientLight = new THREE.AmbientLight(0x404040, 40);
+    const ambientLight = new THREE.AmbientLight(0x222222, 60);
     this.scene.add(ambientLight);
 
     if (hasDebugMode) {
@@ -87,14 +104,20 @@ class SolarSystem {
         .name("Ambient light");
     }
 
-    const bulbLight = new THREE.PointLight("#ddd", 40, 100, 0.5);
-    bulbLight.position.set(0, 0, -4);
-    bulbLight.castShadow = true;
-    this.scene.add(bulbLight);
+    const sunLight = new THREE.PointLight(0xffffff, 400);
+    sunLight.position.set(0, 0, -5);
+    sunLight.castShadow = true;
+
+    sunLight.shadow.camera.near = 20;
+    sunLight.shadow.camera.far = 120;
+    sunLight.shadow.mapSize.width = 1024;
+    sunLight.shadow.mapSize.height = 1024;
+
+    this.scene.add(sunLight);
 
     if (hasDebugMode) {
       this.gui
-        .add(bulbLight, "intensity")
+        .add(sunLight, "intensity")
         .min(20)
         .max(50)
         .step(1)

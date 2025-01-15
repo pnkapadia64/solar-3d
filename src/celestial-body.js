@@ -21,13 +21,27 @@ export class CelestialBody {
   create() {
     const texture = textureLoader.load(this.textureUrl);
     texture.colorSpace = THREE.SRGBColorSpace;
-    const material = new THREE.MeshLambertMaterial({
-      map: texture,
-    });
-    material.metalness = 0.4;
+    let material;
+    if (this.name === "sun") {
+      material = new THREE.MeshStandardMaterial({
+        emissive: new THREE.Color("yellow"),
+        emissiveMap: texture,
+        emissiveIntensity: 50,
+        color: "yellow",
+      });
+    } else {
+      material = new THREE.MeshStandardMaterial({
+        map: texture,
+      });
+    }
 
     this.mesh = new THREE.Mesh(new THREE.SphereGeometry(this.radius), material);
     this.mesh.position.set(0, 0, 0);
+
+    if (this.name !== "sun") {
+      this.mesh.castShadow = true;
+      this.mesh.receiveShadow = true;
+    }
 
     this.cog = new THREE.Group();
     this.cog.position.set(0, 0, 0);
