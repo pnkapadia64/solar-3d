@@ -40,7 +40,7 @@ class SolarSystem {
     this.renderer = new Renderer(canvas, this.camera, this.scene);
 
     TickInstance.startTick();
-    RaycasterClickInstance.registerTick(this.camera);
+    RaycasterClickInstance.registerCamera(this.camera);
   }
 
   setupCelestialBodies() {
