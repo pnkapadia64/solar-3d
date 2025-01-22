@@ -14,6 +14,8 @@ export class Renderer {
     this.renderer = new THREE.WebGLRenderer({
       canvas,
     });
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.setSize(dimension.width, dimension.height);
     this.scene = scene;
     this.camera = camera;

@@ -23,6 +23,7 @@ class SolarSystem {
       this.gui = new GUI();
     }
     this.setupCelestialBodies();
+    this.setupSky();
     this.setupLight();
 
     const dimension = {
@@ -72,6 +73,41 @@ class SolarSystem {
     this.scene.add(sun.getCentre());
   }
 
+  setupSky() {
+    const yellowStarMaterial = new THREE.PointsMaterial({
+      size: 0.02,
+      sizeAttenuation: true,
+      color: "yellow",
+    });
+    const yellowStars = new THREE.Points(
+      this.getRandomStarsGeometry(100),
+      yellowStarMaterial
+    );
+    this.scene.add(yellowStars);
+
+    const blueStarMaterial = new THREE.PointsMaterial({
+      size: 0.03,
+      sizeAttenuation: true,
+      color: "#0296ff",
+    });
+    const blueStars = new THREE.Points(
+      this.getRandomStarsGeometry(400),
+      blueStarMaterial
+    );
+    this.scene.add(blueStars);
+
+    const whiteStarMaterial = new THREE.PointsMaterial({
+      size: 0.02,
+      sizeAttenuation: true,
+      color: "white",
+    });
+    const whiteStars = new THREE.Points(
+      this.getRandomStarsGeometry(400),
+      whiteStarMaterial
+    );
+    this.scene.add(whiteStars);
+  }
+
   setupLight() {
     const hasDebugMode = this.hasDebugMode();
 
@@ -87,14 +123,19 @@ class SolarSystem {
         .name("Ambient light");
     }
 
-    const bulbLight = new THREE.PointLight("#ddd", 40, 100, 0.5);
-    bulbLight.position.set(0, 0, -4);
-    bulbLight.castShadow = true;
-    this.scene.add(bulbLight);
+    const sunLight = new THREE.PointLight(0xffffff, 400);
+    sunLight.position.set(0, 0, -5);
+    sunLight.castShadow = true;
 
+    sunLight.shadow.camera.near = 20;
+    sunLight.shadow.camera.far = 120;
+    sunLight.shadow.mapSize.width = 1024;
+    sunLight.shadow.mapSize.height = 1024;
+
+    this.scene.add(sunLight);
     if (hasDebugMode) {
       this.gui
-        .add(bulbLight, "intensity")
+        .add(sunLight, "intensity")
         .min(20)
         .max(50)
         .step(1)
@@ -106,6 +147,19 @@ class SolarSystem {
     const queryParams = new URLSearchParams(window.location.search);
     return queryParams.has("debug") && queryParams.get("debug") === "true";
   };
+
+  getRandomStarsGeometry(count) {
+    const starGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(count * 3);
+    for (let i = 0; i < count * 3; i++) {
+      positions[i] = (Math.random() - 0.5) * 150;
+    }
+    starGeometry.setAttribute(
+      "position",
+      new THREE.BufferAttribute(positions, 3)
+    );
+    return starGeometry;
+  }
 }
 
 export default SolarSystem;
